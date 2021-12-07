@@ -1,0 +1,121 @@
+﻿@page "/{Encoded}/stats"
+
+@inject IUriService Service
+@inject NavigationManager NavigationManager;
+
+<PageTitle>Mini Uri - Stats</PageTitle>
+
+<h1>Uri Stats</h1>
+
+<div class="mt-5" style=' display: @(HasError? "block" : "none");
+        background:red;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+	<p role="status">Error: @Error</p>
+</div>
+
+@if (!this.HasError)
+{
+	@if (Statistics == null)
+	{
+		<p><em>Loading...</em></p>
+	}
+	else
+	{
+		<p>
+			<label>
+				Url : @Statistics?.Uri
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Statistics As Of: @Statistics?.RecordCreated
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Created: @Statistics?.WhenCreated
+			</label>
+		</p>
+
+
+		<p>
+			<label>
+				First Viewed: @Statistics?.FirstViewed
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Last Viewed: @Statistics?.LastViewed
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Time to Expiration: @Statistics?.TimeToExpiration
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Visits: @Statistics?.Views
+			</label>
+		</p>
+
+		<p>
+			<label>
+				Unique Viewers: @Statistics?.UniqueViewers
+			</label>
+		</p>
+
+
+		<div class="mt-5" style=' display: @(!HasError ? "block" : "none");
+		background:blue;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+
+			<button @onclick="OnClickDeleteAsync">
+				Delete
+			</button>
+
+
+			<button @onclick="OnClickView">
+				View
+			</button>
+		</div>
+	}
+}
+
+@code {
+	[Parameter]
+	public string Encoded { get; set; } = string.Empty;
+	
+	private Statistics? Statistics { get; set; }
+
+	private string? Error { get; set; }
+
+	private bool HasError => this.Error != null;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			this.Statistics = await this.Service.StatisticsAsync(this.Encoded, default);
+		}
+		catch (Exception)
+		{
+			this.Error = $"{this.Encoded} is not valid";
+		}
+	}
+
+	private async Task OnClickDeleteAsync()
+	{
+		await this.Service.RemoveAsync(this.Encoded, default);
+
+		this.NavigationManager.NavigateTo("/");
+	}
+
+	private void OnClickView()
+	{
+		this.NavigationManager.NavigateTo($"/{Encoded}");
+	}
+}

@@ -1,0 +1,100 @@
+﻿@page "/"
+
+@inject IUriService Service
+@inject NavigationManager NavigationManager;
+
+<PageTitle>Mini Uri - Home</PageTitle>
+
+<h1>Mini Uri</h1>
+
+<EditForm Model="@Model" OnValidSubmit="@HandleValidSubmitAsync">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+	Url:
+	<InputText id="url" @bind-Value="Model.Url" />
+	Desired:
+	<InputText id="desired" @bind-Value="Model.DesiredKey" />
+
+	<button type="submit">Create</button>
+</EditForm>
+
+<div class="mt-5" style=' display: @(HasError? "block" : "none");
+        background:red;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+	<p role="status">Error: @Error</p>
+</div>
+
+<div class="mt-5" style=' display: @(HasResult? "block" : "none");
+		background:blue;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+	<p role="status">Encoded: @Encoded</p>
+
+	<button @onclick="OnClickDeleteAsync">
+		Delete
+	</button>
+
+	<button @onclick="OnClickStats">
+		Stats
+	</button>
+
+	<button @onclick="OnClickView">
+		View
+	</button>
+</div>
+
+
+@code {
+	private CreateModel Model { get; set; } = new();
+
+	private string? Encoded { get; set; }
+
+	private string? Error { get; set; }
+
+	private bool HasError => this.Error != null;
+
+	private bool HasResult => this.Encoded != null;
+
+	private async Task HandleValidSubmitAsync()
+	{
+		this.Encoded = null;
+		this.Error = null;
+
+		try
+		{
+			if (Model.DesiredKey != null)
+			{
+				var result = await this.Service.AddAsync(Model.Url!, Model.DesiredKey, default)
+					.ConfigureAwait(false);
+
+				this.Encoded = result.EncodedUri;
+			}
+			else
+			{
+				var result = await this.Service.AddAsync(Model.Url!, default)
+					.ConfigureAwait(false);
+			
+				this.Encoded = result.EncodedUri;
+			}
+		}
+		catch (Exception ex)
+		{
+			this.Error = ex.Message;
+		}
+	}
+
+	private async Task OnClickDeleteAsync()
+	{
+		await this.Service.RemoveAsync(this.Encoded!, default)
+			.ConfigureAwait(false);
+
+		this.Encoded = null;
+	}
+
+	private void OnClickStats()
+	{
+		this.NavigationManager.NavigateTo($"/{Encoded}/stats");
+	}
+
+	private void OnClickView()
+	{
+		this.NavigationManager.NavigateTo($"/{Encoded}");
+	}
+}

@@ -1,0 +1,71 @@
+﻿@page "/{Encoded}"
+
+@inject IUriService Service
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager;
+
+<PageTitle>Mini Uri - Relay</PageTitle>
+
+<h1>Uri Relay</h1>
+
+<div class="mt-5" style=' display: @(HasError? "block" : "none");
+        background:red;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+	<p role="status">Error: @Error</p>
+</div>
+
+
+@if (!this.HasError)
+{
+	<p><em>@Uri</em></p>
+
+	<div class="mt-5" style=' display: @(!HasError ? "block" : "none");
+		background:blue;padding:20px;color:#fff;border-radius:5px;text-align:center'>
+
+		<button @onclick="OnClickDeleteAsync">
+			Delete
+		</button>
+
+		<button @onclick="OnClickStats">
+			Stats
+		</button>
+
+	</div>
+}
+
+
+@code {
+	[Parameter]
+	public string Encoded { get; set; } = string.Empty;
+
+	private Uri? Uri { get; set; }
+
+	private string? Error { get; set; }
+
+	private bool HasError => this.Error != null;
+
+	protected override async Task OnParametersSetAsync()
+	{
+		try
+		{
+			this.Uri = await this.Service.LookupAsync(this.Encoded, this.HttpContextAccessor.HttpContext!.Connection.RemoteIpAddress!, default)
+				.ConfigureAwait(false);;
+		}
+		catch (Exception)
+		{
+			this.Error = $"{this.Encoded} is not valid";
+		}
+	}
+
+	private async Task OnClickDeleteAsync()
+	{
+		await this.Service.RemoveAsync(this.Encoded, default)				
+			.ConfigureAwait(false);
+
+		this.NavigationManager.NavigateTo("/");
+	}
+
+	private void OnClickStats()
+	{
+		this.NavigationManager.NavigateTo($"/{Encoded}/Stats");
+	}
+}
