@@ -76,7 +76,7 @@
 
             using var tx = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-            // the following will add the descired key to the secondary index
+            // the following will add the desired key to the secondary index
             var wasAdded = await this.storage.TryAddDesiredKeyAsync(desiredKey, key, default)
                    .ConfigureAwait(false);
 
