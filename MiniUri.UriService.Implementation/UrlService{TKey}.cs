@@ -3,6 +3,7 @@
     using System;
     using System.Net;
     using System.Threading.Tasks;
+    using System.Transactions;
     using Microsoft.Extensions.Logging;
     using MiniUri.Common;
     using MiniUri.UriService.Contracts;
@@ -73,7 +74,9 @@
             // at this point its available, so lets allocate an Id in the sequence
             var key = this.sequence.Next();
 
-            // the follow will 
+            using var tx = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+            // the following will add the descired key to the secondary index
             var wasAdded = await this.storage.TryAddDesiredKeyAsync(desiredKey, key, default)
                    .ConfigureAwait(false);
 
@@ -84,6 +87,8 @@
 
             var result = await this.storage.AddAsync(key, clean, desiredKey, ct)
                    .ConfigureAwait(false);
+
+            tx.Complete();
 
             this.logger.LogInformation("AddAsync Id:{} Encoded:{} Original:{}", key, result.EncodedUri, result.OriginalUri);
 
